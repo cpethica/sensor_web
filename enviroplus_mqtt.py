@@ -2,6 +2,8 @@
 
 import time
 from pms5003 import PMS5003, ReadTimeoutError
+import RPi.GPIO as GPIO
+GPIO.setmode(GPIO.BCM)
 
 import paho.mqtt.client as mqtt
 
@@ -32,6 +34,9 @@ time.sleep(1.0)
 
 while True:
     try:
+        # wake sensor from low power mode and wait to stabilise
+        GPIO.output(22, 1)
+        time.sleep(10)
         readings = pms5003.read()
         print(f"PM10 ug/m3 (combustion particles, organic compounds, metals): {readings.pm_ug_per_m3(10)}")
 
@@ -41,4 +46,6 @@ while True:
     except ReadTimeoutError:
         pms5003 = PMS5003()
 
-
+    # put sensor in low power mode and sleep until next reading
+    GPIO.output(22, 0)
+    time.sleep(10)
