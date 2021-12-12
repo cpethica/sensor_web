@@ -7,9 +7,22 @@ GPIO.setmode(GPIO.BCM)
 
 import paho.mqtt.client as mqtt
 
-MQTT_ADDRESS = '192.168.1.101'
-MQTT_USER = 'sensor_web'
-MQTT_PASSWORD = 'envirosense!mqtt'
+#Load configuration from .ini file.
+import configparser
+import sys
+# make sure config file exists
+try:
+    f = open('config.ini')
+except FileNotFoundError:
+    print("config.ini file not found")
+    sys.exit()
+# read config file
+config = configparser.ConfigParser()
+config.read('config.ini')
+
+MQTT_ADDRESS = config.get('MQTT', 'MQTT_ADDRESS')
+MQTT_USER = config.get('MQTT', 'MQTT_USER')
+MQTT_PASSWORD = config.get('MQTT', 'MQTT_PASSWORD')
 MQTT_TOPIC = 'home/+/+'
 MQTT_REGEX = 'home/([^/]+)/([^/]+)'
 MQTT_CLIENT_ID = 'enviroplus'
@@ -44,4 +57,4 @@ while True:
 
     # put sensor in low power mode and sleep until next reading
     GPIO.output(22, 0)
-    time.sleep(600)
+    time.sleep(60)
