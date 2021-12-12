@@ -21,10 +21,6 @@ mqtt_client.connect(MQTT_ADDRESS, 1883)
 pms5003 = PMS5003()
 time.sleep(1.0)
 
-
-
-
-
 # get values from readings object (class PMS5003Data)
 
 # pm_ug_per_m3(1.0)
@@ -36,9 +32,9 @@ while True:
     try:
         # wake sensor from low power mode and wait to stabilise
         GPIO.output(22, 1)
-        time.sleep(10)
+        time.sleep(30)
         readings = pms5003.read()
-        print(f"PM10 ug/m3 (combustion particles, organic compounds, metals): {readings.pm_ug_per_m3(10)}")
+        print(f"PM per l air 0.1: {readings.pm_per_1l_air}")
 
         mqtt_client.publish("home/indoor/PM10", readings.pm_ug_per_m3(10))
 
@@ -48,4 +44,4 @@ while True:
 
     # put sensor in low power mode and sleep until next reading
     GPIO.output(22, 0)
-    time.sleep(10)
+    time.sleep(600)
