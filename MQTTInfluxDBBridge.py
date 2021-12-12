@@ -4,14 +4,27 @@ from typing import NamedTuple
 import paho.mqtt.client as mqtt
 from influxdb import InfluxDBClient
 
-INFLUXDB_ADDRESS = '192.168.1.101'
-INFLUXDB_USER = 'mqtt'
-INFLUXDB_PASSWORD = 'mqtt'
-INFLUXDB_DATABASE = 'weather_station'
+#Load configuration from .ini file.
+import configparser
+import sys
+# make sure config file exists
+try:
+    f = open('config.ini')
+except FileNotFoundError:
+    print("config.ini file not found")
+    sys.exit()
+# read config file
+config = configparser.ConfigParser()
+config.read('config.ini')
 
-MQTT_ADDRESS = '192.168.1.101'
-MQTT_USER = 'sensor_web'
-MQTT_PASSWORD = 'envirosense!mqtt'
+INFLUXDB_ADDRESS = config.get('DATABASE', 'DB_ADDRESS')
+INFLUXDB_USER = config.get('DATABASE', 'DB_USER')
+INFLUXDB_PASSWORD = config.get('DATABASE', 'DB_PASSWORD')
+INFLUXDB_DATABASE = config.get('DATABASE', 'DB_NAME')
+
+MQTT_ADDRESS = config.get('MQTT', 'MQTT_ADDRESS')
+MQTT_USER = config.get('MQTT', 'MQTT_USER')
+MQTT_PASSWORD = config.get('MQTT', 'MQTT_PASSWORD')
 MQTT_TOPIC = 'home/+/+'
 MQTT_REGEX = 'home/([^/]+)/([^/]+)'
 MQTT_CLIENT_ID = 'MQTTInfluxDBBridge'
