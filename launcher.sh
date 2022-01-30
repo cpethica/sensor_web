@@ -5,6 +5,6 @@ sleep 60
 
 cd /
 cd home/pi/sensor_web
-sudo python3 MQTTInfluxDBBridge.py &
+python MQTTInfluxDBBridge.py &
 python enviroplus_mqtt.py
 cd /
