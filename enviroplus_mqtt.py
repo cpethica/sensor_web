@@ -57,4 +57,4 @@ while True:
 
     # put sensor in low power mode and sleep until next reading
     GPIO.output(22, 0)
-    time.sleep(60)
+    time.sleep(30)
