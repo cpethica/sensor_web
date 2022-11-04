@@ -4,8 +4,11 @@ from machine import Pin, I2C, ADC
 
 import config       # add passwords etc
 import BME280
+import ubinascii
 import network
-import urequests
+from umqttsimple import MQTTClient
+import esp
+import micropython
 from time import sleep
 
 import esp
@@ -14,12 +17,11 @@ esp.osdebug(None)
 import gc
 gc.collect()
 
-ms_sleep_time = 100000
-
+ms_sleep_time = 60000
 station = network.WLAN(network.STA_IF)
 
 station.active(True)
-station.connect(ssid, password)
+station.connect(config.ssid, config.password)
 
 while station.isconnected() == False:
   pass
@@ -41,30 +43,57 @@ def deep_sleep(msecs) :
 # ESP8266 - Pin assignement
 i2c = I2C(scl=Pin(5),sda=Pin(4), freq=10000)
 vpin = ADC(0)
+bme = BME280.BME280(i2c=i2c)
+
+# MQTT setup
+client_id = ubinascii.hexlify(machine.unique_id())
+mqtt_server = config.MQTT_ADDRESS
+topic_pub_temp = b'esp/bme280/temperature'
+topic_pub_hum = b'esp/bme280/humidity'
+topic_pub_pres = b'esp/bme280/pressure'
+
+def connect_mqtt():
+  global client_id, mqtt_server
+  client = MQTTClient(client_id, mqtt_server, user=config.MQTT_USER, password=config.MQTT_PASSWORD)
+  client.connect()
+  print('Connected to %s MQTT broker' % (config.MQTT_ADDRESS))
+  return client
+
+def restart_and_reconnect():
+  print('Failed to connect to MQTT broker. Reconnecting...')
+  time.sleep(10)
+  machine.reset()
+
+def read_bme_sensor():
+  try:
+    temp = b'%s' % bme.temperature[:-1]
+    #temp = (b'{0:3.1f},'.format((bme.read_temperature()/100) * (9/5) + 32))
+    hum = b'%s' % bme.humidity[:-1]
+    pres = b'%s'% bme.pressure[:-3]
+
+    return temp, hum, pres
+    #else:
+    #  return('Invalid sensor readings.')
+  except OSError as e:
+    return('Failed to read sensor.')
 
 try:
-  bme = BME280.BME280(i2c=i2c)
-  temp = bme.temperature
-  hum = bme.humidity
-  pres = bme.pressure
+  client = connect_mqtt()
+except OSError as e:
+  restart_and_reconnect()
 
-  voltage = vpin.read()
+try:
+    temp, hum, pres = read_bme_sensor()
+    print(temp)
+    print(hum)
+    print(pres)
+    client.publish(topic_pub_temp, temp)
+    client.publish(topic_pub_hum, hum)      
+    client.publish(topic_pub_pres, pres)
 
-  sensor_readings = {'value1':temp[:-1], 'value2':voltage, 'value3':pres[:-3]}
-  print(sensor_readings)
-
-  request_headers = {'Content-Type': 'application/json'}
-
-  request = urequests.post(
-    'https://maker.ifttt.com/trigger/bme_280_readings/with/key/' + IFTTT_api_key,
-    json=sensor_readings,
-    headers=request_headers)
-  print(request.text)
-  request.close()
 
 except OSError as e:
-  print('Failed to read/publish sensor readings.')
-
+    restart_and_reconnect()
 sleep(10)
 
 #ESP8266
