@@ -2,6 +2,7 @@
 import machine
 from machine import Pin, I2C, ADC
 
+import config       # add passwords etc
 import BME280
 import network
 import urequests
@@ -13,10 +14,6 @@ esp.osdebug(None)
 import gc
 gc.collect()
 
-ssid = 'BT-Q8CT3X'
-password = 'Tg4CQvxY6vG3KC'
-
-api_key = 'l4L-zx0hRGh-HrT2uH7nU3XgwsqZygKbxmptIEHNjKP'
 
 ms_sleep_time = 100000
 
@@ -60,7 +57,7 @@ try:
   request_headers = {'Content-Type': 'application/json'}
 
   request = urequests.post(
-    'https://maker.ifttt.com/trigger/bme_280_readings/with/key/' + api_key,
+    'https://maker.ifttt.com/trigger/bme_280_readings/with/key/' + IFTTT_api_key,
     json=sensor_readings,
     headers=request_headers)
   print(request.text)
