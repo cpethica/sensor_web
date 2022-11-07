@@ -9,7 +9,7 @@ import network
 from umqttsimple import MQTTClient
 import esp
 import micropython
-from time import sleep
+import time
 
 import esp
 esp.osdebug(None)
@@ -51,6 +51,7 @@ mqtt_server = config.MQTT_ADDRESS
 topic_pub_temp = b'esp/bme280/temperature'
 topic_pub_hum = b'esp/bme280/humidity'
 topic_pub_pres = b'esp/bme280/pressure'
+topic_pub_volt = b'esp/bme280/voltage'
 
 def connect_mqtt():
   global client_id, mqtt_server
@@ -67,13 +68,25 @@ def restart_and_reconnect():
 def read_bme_sensor():
   try:
     temp = b'%s' % bme.temperature[:-1]
-    #temp = (b'{0:3.1f},'.format((bme.read_temperature()/100) * (9/5) + 32))
+    time.sleep(2)
     hum = b'%s' % bme.humidity[:-1]
+    time.sleep(2)
     pres = b'%s'% bme.pressure[:-3]
 
     return temp, hum, pres
     #else:
     #  return('Invalid sensor readings.')
+  except OSError as e:
+    return('Failed to read sensor.')
+
+def voltage():
+  try:
+    v = vpin.read()
+    # 4.35V = HIGH (1023) on analog pin - V = vpin x (4.35/1023)
+    v = v * (4.35/1023)
+    v = b'%s' % v
+    q
+    return v
   except OSError as e:
     return('Failed to read sensor.')
 
@@ -84,17 +97,20 @@ except OSError as e:
 
 try:
     temp, hum, pres = read_bme_sensor()
-    print(temp)
-    print(hum)
-    print(pres)
+    volts = voltage()
     client.publish(topic_pub_temp, temp)
     client.publish(topic_pub_hum, hum)      
     client.publish(topic_pub_pres, pres)
-
+    client.publish(topic_pub_volt, volts)
+    print(temp)
+    print(hum)
+    print(pres)
+    print(volts)
 
 except OSError as e:
     restart_and_reconnect()
-sleep(10)
+
+time.sleep(10)
 
 #ESP8266
 deep_sleep(ms_sleep_time)
